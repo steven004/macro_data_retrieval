@@ -13,8 +13,8 @@ A streamlined Python utility for intelligently fetching and appending historical
 This repository comes pre-packaged with an automatic environment handler. Simply pull or clone the repository to your new machine, and run the wrapper script:
 
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
+git clone git@github.com:steven004/macro_data_retrieval.git
+cd macro_data_retrieval
 chmod +x run.sh
 ./run.sh
 ```
