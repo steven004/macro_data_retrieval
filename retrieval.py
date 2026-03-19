@@ -20,11 +20,11 @@ INDICES = {
     "JPY=X": "USD_JPY"          
 }
 
-def update_symbol_data(ticker_symbol: str, name: str, data_dir: str = ".") -> pd.DataFrame:
+def update_symbol_data(ticker_symbol: str, name: str, history_dir: str = ".") -> pd.DataFrame:
     """
     Updates the historical data for a given symbol and returns the full dataframe.
     """
-    file_path = os.path.join(data_dir, f"{name}_history.csv")
+    file_path = os.path.join(history_dir, f"{name}_history.csv")
     today = datetime.now().date()
     
     # We fetch up to tomorrow to ensure we get all data across timezones
