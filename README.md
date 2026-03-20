@@ -13,8 +13,8 @@ A streamlined, highly flexible Python utility for intelligently fetching, extend
 This repository comes pre-packaged with an automatic environment handler securely tracking setups gracefully completely safely.
 
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
+git clone https://github.com/steven004/macro_data_retrieval.git
+cd macro_data_retrieval
 chmod +x run.sh
 ./run.sh
 ```
