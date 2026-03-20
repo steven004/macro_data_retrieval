@@ -15,7 +15,6 @@ def main():
         os.makedirs(args.pv_dir)
         
     latest_values = {}
-    last_dates = {}
     all_closes = {}
     
     print("Starting data retrieval for Macro indices...")
@@ -30,38 +29,48 @@ def main():
                 if "Close" in df.columns:
                     all_closes[name] = df["Close"]
                 
-                # Find the latest valid 'Close' price for the snapshot
+                # Find the latest valid row for the snapshot
                 if "Close" in df.columns:
-                    valid_data = df["Close"].dropna()
-                    if not valid_data.empty:
-                        latest_close = valid_data.iloc[-1]
-                        latest_date = valid_data.index[-1].date()
-                    else:
-                        latest_close = "N/A"
-                        latest_date = "Unknown"
-                else:
-                    latest_close = df.iloc[-1][0]
-                    latest_date = df.index[-1].date()
-                    
-                latest_values[name] = latest_close
-                last_dates[name] = latest_date
+                    valid_df = df.dropna(subset=["Close"])
+                    if not valid_df.empty:
+                        latest_row = valid_df.iloc[-1]
+                        
+                        # Helper to safely format floats to optimize LLM tokens (prevents 15 integer trails)
+                        def safe_round(val, decimals=4):
+                            try:
+                                return round(float(val), decimals)
+                            except:
+                                return val
+                                
+                        latest_values[name] = {
+                            "Close": safe_round(latest_row.get("Close"), 2),
+                            "MA_20": safe_round(latest_row.get("MA_20"), 2),
+                            "MA_50": safe_round(latest_row.get("MA_50"), 2),
+                            "MA_200": safe_round(latest_row.get("MA_200"), 2),
+                            "RSI_14": safe_round(latest_row.get("RSI_14"), 2),
+                            "ATR_14": safe_round(latest_row.get("ATR_14"), 2),
+                            "Return_1M": safe_round(latest_row.get("Return_1M"), 4),
+                            "Return_3M": safe_round(latest_row.get("Return_3M"), 4),
+                            "Return_6M": safe_round(latest_row.get("Return_6M"), 4),
+                            "Return_YTD": safe_round(latest_row.get("Return_YTD"), 4),
+                            "Drawdown_52W": safe_round(latest_row.get("Drawdown_52W"), 4),
+                            "Last_Updated": latest_row.name.date()
+                        }
         except Exception as e:
             print(f"[{name}] Error: {e}")
             
-    # Save present values to a separate file
+    # Save horizontally expanded present values to a separate file
     if latest_values:
         pv_file = os.path.join(args.pv_dir, "present_values.csv")
         pv_data = []
-        for name, value in latest_values.items():
-            pv_data.append({
-                "Index": name,
-                "Present_Value": value,
-                "Last_Updated": last_dates.get(name, "Unknown")
-            })
+        for name, metrics in latest_values.items():
+            row = {"Index": name}
+            row.update(metrics)
+            pv_data.append(row)
             
         pv_df = pd.DataFrame(pv_data)
         pv_df.to_csv(pv_file, index=False)
-        print(f"\nSuccessfully stored present values in {pv_file}")
+        print(f"\nSuccessfully stored LLM-friendly present values snapshot in {pv_file}")
     
     # Generate Cross-Asset Math Correlation Matrix
     if all_closes:
@@ -72,12 +81,16 @@ def main():
         df_returns = df_all_close.pct_change()
         # Evaluate exclusively the 30-day cross correlation Window
         latest_30d_returns = df_returns.tail(30)
-        corr_matrix = latest_30d_returns.corr()
+        
+        # Round correlation matrix to 3 decimal places to massively save LLM context window tokens
+        corr_matrix = latest_30d_returns.corr().round(3) 
         
         corr_file = os.path.join(args.pv_dir, "cross_asset_correlation.csv")
         corr_matrix.index.name = "Ticker"
         corr_matrix.to_csv(corr_file)
-        print(f"Successfully stored cross-asset 30D correlation matrix in {corr_file}")
+        print(f"Successfully stored LLM-friendly cross-asset 30D correlation matrix in {corr_file}")
+    else:
+        print("\nNo data retrieved.")
 
 if __name__ == "__main__":
     main()
