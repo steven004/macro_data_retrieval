@@ -2,6 +2,7 @@ import os
 import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
+from indicators import add_technical_indicators
 
 INDICES = {
     "^GSPC": "SP500",           
@@ -22,7 +23,7 @@ INDICES = {
 
 def update_symbol_data(ticker_symbol: str, name: str, history_dir: str = ".") -> pd.DataFrame:
     """
-    Updates the historical data for a given symbol and returns the full dataframe.
+    Updates the historical data for a given symbol, computes indicators, and returns the full dataframe.
     """
     file_path = os.path.join(history_dir, f"{name}_history.csv")
     today = datetime.now().date()
@@ -52,6 +53,10 @@ def update_symbol_data(ticker_symbol: str, name: str, history_dir: str = ".") ->
                     # Drop duplicate dates, keep the 'last' (newest fetched) which has complete data
                     df_combined = df_combined[~df_combined.index.duplicated(keep='last')]
                     df_combined.sort_index(inplace=True)
+                    
+                    # Compute technical indicators natively before saving
+                    df_combined = add_technical_indicators(df_combined)
+                    
                     df_combined.to_csv(file_path)
                     return df_combined
             except Exception as e:
@@ -67,6 +72,10 @@ def update_symbol_data(ticker_symbol: str, name: str, history_dir: str = ".") ->
     df_new = ticker.history(start=start_date_1y, end=end_date_str)
     if not df_new.empty:
         df_new.index = pd.to_datetime(df_new.index).tz_localize(None)
+        
+        # Compute technical indicators natively before saving
+        df_new = add_technical_indicators(df_new)
+        
         df_new.to_csv(file_path)
         return df_new
     

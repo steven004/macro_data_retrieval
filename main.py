@@ -16,6 +16,7 @@ def main():
         
     latest_values = {}
     last_dates = {}
+    all_closes = {}
     
     print("Starting data retrieval for Macro indices...")
     print(f"History data will be stored in: {os.path.abspath(args.history_dir)}")
@@ -25,7 +26,11 @@ def main():
         try:
             df = update_symbol_data(ticker, name, history_dir=args.history_dir)
             if not df.empty:
-                # Find the latest valid 'Close' price
+                # Capture the complete price series for the correlation matrix
+                if "Close" in df.columns:
+                    all_closes[name] = df["Close"]
+                
+                # Find the latest valid 'Close' price for the snapshot
                 if "Close" in df.columns:
                     valid_data = df["Close"].dropna()
                     if not valid_data.empty:
@@ -57,8 +62,22 @@ def main():
         pv_df = pd.DataFrame(pv_data)
         pv_df.to_csv(pv_file, index=False)
         print(f"\nSuccessfully stored present values in {pv_file}")
-    else:
-        print("\nNo data retrieved.")
+    
+    # Generate Cross-Asset Math Correlation Matrix
+    if all_closes:
+        df_all_close = pd.DataFrame(all_closes)
+        df_all_close.dropna(how='all', inplace=True)
+        
+        # Calculate daily percentage returns
+        df_returns = df_all_close.pct_change()
+        # Evaluate exclusively the 30-day cross correlation Window
+        latest_30d_returns = df_returns.tail(30)
+        corr_matrix = latest_30d_returns.corr()
+        
+        corr_file = os.path.join(args.pv_dir, "cross_asset_correlation.csv")
+        corr_matrix.index.name = "Ticker"
+        corr_matrix.to_csv(corr_file)
+        print(f"Successfully stored cross-asset 30D correlation matrix in {corr_file}")
 
 if __name__ == "__main__":
     main()
