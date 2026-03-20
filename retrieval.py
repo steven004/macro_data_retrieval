@@ -4,23 +4,6 @@ import pandas as pd
 from datetime import datetime, timedelta
 from indicators import add_technical_indicators
 
-INDICES = {
-    "^GSPC": "SP500",           
-    "DX-Y.NYB": "USD_Index",    
-    "^TNX": "US10Y_Yield",      
-    "^VIX": "VIX_Fear_Index",   
-    "BZ=F": "Brent_Crude",      
-    "^SOX": "Semiconductor",    
-    "HG=F": "Copper",           
-    "GC=F": "Gold",             
-    "BTC-USD": "BTC",           
-    "000001.SS": "Shanghai",    
-    "^HSI": "HK_Index",         
-    "LQD": "Corp_Credit",       
-    "BDRY": "Shipping_Index",   
-    "JPY=X": "USD_JPY"          
-}
-
 def update_symbol_data(ticker_symbol: str, name: str, history_dir: str = ".") -> pd.DataFrame:
     """
     Updates the historical data for a given symbol, computes indicators, and returns the full dataframe.

@@ -19,4 +19,8 @@ fi
 
 # Run the main program using the virtual environment's embedded python binary.
 # Using the explicit ./venv/bin/python completely bypasses any cron PATH or 'source' environment issues!
-./venv/bin/python main.py "$@"
+if [ $# -eq 0 ]; then
+    ./venv/bin/python main.py --tickers-file "config/macro_tickers.json" --history-dir "data/history_data" --pv-dir "data/present_value"
+else
+    ./venv/bin/python main.py "$@"
+fi
