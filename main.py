@@ -96,5 +96,55 @@ def main():
     else:
         print("\nDeployment completed, zero values were able to uniquely save correctly.")
 
+    if latest_values:
+        from datetime import datetime
+        metadata = {
+            "snapshot_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "last_updated": str(max([v["Last_Updated"] for v in latest_values.values()]))
+        }
+        
+        technical_indicators = {}
+        for name, metrics in latest_values.items():
+            close = metrics.get("Close")
+            ma20 = metrics.get("MA_20")
+            ma50 = metrics.get("MA_50")
+            ma200 = metrics.get("MA_200")
+            
+            def safe_dist(c, ma):
+                if c is not None and ma is not None and ma > 0:
+                    return round((c - ma) / ma, 4)
+                return None
+                
+            trend = None
+            if close is not None and ma200 is not None:
+                trend = "Bearish" if close < ma200 else "Bullish"
+                
+            technical_indicators[name] = {
+                "dist_to_MA20": safe_dist(close, ma20),
+                "dist_to_MA50": safe_dist(close, ma50),
+                "dist_to_MA200": safe_dist(close, ma200),
+                "long_term_trend": trend,
+                "Return_1M": metrics.get("Return_1M"),
+                "Return_3M": metrics.get("Return_3M"),
+                "Return_YTD": metrics.get("Return_YTD"),
+                "Drawdown_52W": metrics.get("Drawdown_52W")
+            }
+            
+        correlations = {}
+        if all_closes and 'corr_matrix' in locals():
+            correlations = corr_matrix.where(pd.notnull(corr_matrix), None).to_dict()
+            
+        market_context = {
+            "metadata": metadata,
+            "technical_indicators": technical_indicators,
+            "cross_asset_correlations": correlations
+        }
+        
+        json_file_path = os.path.join(args.pv_dir, "market_context.json")
+        with open(json_file_path, "w") as f:
+            json.dump(market_context, f, indent=4)
+            
+        print(f"\nSuccessfully generated integrated market context JSON to {json_file_path}")
+
 if __name__ == "__main__":
     main()
