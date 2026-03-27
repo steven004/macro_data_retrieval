@@ -103,7 +103,7 @@ def main():
             "last_updated": str(max([v["Last_Updated"] for v in latest_values.values()]))
         }
         
-        technical_indicators = {}
+        assets_data = {}
         for name, metrics in latest_values.items():
             close = metrics.get("Close")
             ma20 = metrics.get("MA_20")
@@ -118,8 +118,19 @@ def main():
             trend = None
             if close is not None and ma200 is not None:
                 trend = "Bearish" if close < ma200 else "Bullish"
-                
-            technical_indicators[name] = {
+            
+            # Asset snapshot with absolute values
+            snapshot = {
+                "Close": close,
+                "MA_20": ma20,
+                "MA_50": ma50,
+                "MA_200": ma200,
+                "RSI_14": metrics.get("RSI_14"),
+                "ATR_14": metrics.get("ATR_14")
+            }
+            
+            # Technical performance with relative/calculated indicators
+            technical_performance = {
                 "dist_to_MA20": safe_dist(close, ma20),
                 "dist_to_MA50": safe_dist(close, ma50),
                 "dist_to_MA200": safe_dist(close, ma200),
@@ -130,21 +141,27 @@ def main():
                 "Drawdown_52W": metrics.get("Drawdown_52W")
             }
             
-        correlations = {}
-        if all_closes and 'corr_matrix' in locals():
-            correlations = corr_matrix.where(pd.notnull(corr_matrix), None).to_dict()
+            # Asset-specific correlations
+            asset_correlations = {}
+            if all_closes and 'corr_matrix' in locals() and name in corr_matrix.index:
+                asset_correlations = corr_matrix.loc[name].where(pd.notnull(corr_matrix.loc[name]), None).to_dict()
+
+            assets_data[name] = {
+                "snapshot": snapshot,
+                "technical_performance": technical_performance,
+                "correlations": asset_correlations
+            }
             
         market_context = {
             "metadata": metadata,
-            "technical_indicators": technical_indicators,
-            "cross_asset_correlations": correlations
+            "assets": assets_data
         }
         
         json_file_path = os.path.join(args.pv_dir, "market_context.json")
         with open(json_file_path, "w") as f:
             json.dump(market_context, f, indent=4)
             
-        print(f"\nSuccessfully generated integrated market context JSON to {json_file_path}")
+        print(f"\nSuccessfully generated restructured asset-centric market context JSON to {json_file_path}")
 
 if __name__ == "__main__":
     main()

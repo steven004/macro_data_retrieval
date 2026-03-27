@@ -12,5 +12,5 @@
     "^HSI": "HK_Index",         
     "LQD": "Corp_Credit",       
     "BDRY": "Shipping_Index",   
-    "JPY=X": "USD_JPY"          
+    "JPY=X": "USD_JPY"
 }
