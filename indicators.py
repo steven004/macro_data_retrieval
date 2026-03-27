@@ -36,7 +36,9 @@ def add_technical_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df['ATR_14'] = tr.ewm(alpha=1/14, adjust=False).mean()
     
     # --- Rolling Returns ---
-    # Approximating trading days: 1M=21, 3M=63, 6M=126
+    # Approximating trading days: 1D=1, 1W=5, 1M=21, 3M=63, 6M=126
+    df['Return_1D'] = df['Close'].pct_change(periods=1)
+    df['Return_1W'] = df['Close'].pct_change(periods=5)
     df['Return_1M'] = df['Close'].pct_change(periods=21)
     df['Return_3M'] = df['Close'].pct_change(periods=63)
     df['Return_6M'] = df['Close'].pct_change(periods=126)

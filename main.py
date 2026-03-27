@@ -63,6 +63,8 @@ def main():
                             "MA_200": safe_round(latest_row.get("MA_200"), 2),
                             "RSI_14": safe_round(latest_row.get("RSI_14"), 2),
                             "ATR_14": safe_round(latest_row.get("ATR_14"), 2),
+                            "Return_1D": safe_round(latest_row.get("Return_1D"), 4),
+                            "Return_1W": safe_round(latest_row.get("Return_1W"), 4),
                             "Return_1M": safe_round(latest_row.get("Return_1M"), 4),
                             "Return_3M": safe_round(latest_row.get("Return_3M"), 4),
                             "Return_6M": safe_round(latest_row.get("Return_6M"), 4),
@@ -109,7 +111,7 @@ def main():
         
         # Calculate summary logic
         def get_val(m, k): return m.get(k) if m.get(k) is not None else -999
-        top_gainers = sorted(latest_values.items(), key=lambda x: get_val(x[1], "Return_1M"), reverse=True)[:3]
+        top_gainers = sorted(latest_values.items(), key=lambda x: get_val(x[1], "Return_1D"), reverse=True)[:3]
         oversold = [name for name, v in latest_values.items() if v.get("RSI_14") is not None and v.get("RSI_14") < 30]
         volatility_ranks = sorted(latest_values.items(), key=lambda x: (x[1].get("ATR_14") / x[1].get("Close")) if x[1].get("ATR_14") and x[1].get("Close") else 0, reverse=True)[:3]
         
@@ -149,6 +151,8 @@ def main():
                 "dist_to_MA50": safe_dist(close, ma50),
                 "dist_to_MA200": safe_dist(close, ma200),
                 "long_term_trend": trend,
+                "Return_1D": metrics.get("Return_1D"),
+                "Return_1W": metrics.get("Return_1W"),
                 "Return_1M": metrics.get("Return_1M"),
                 "Return_3M": metrics.get("Return_3M"),
                 "Return_YTD": metrics.get("Return_YTD"),
