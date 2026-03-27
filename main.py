@@ -54,6 +54,10 @@ def main():
                                 
                         latest_values[name] = {
                             "Close": safe_round(latest_row.get("Close"), 2),
+                            "Open": safe_round(latest_row.get("Open"), 2),
+                            "High": safe_round(latest_row.get("High"), 2),
+                            "Low": safe_round(latest_row.get("Low"), 2),
+                            "Volume": safe_round(latest_row.get("Volume"), 0),
                             "MA_20": safe_round(latest_row.get("MA_20"), 2),
                             "MA_50": safe_round(latest_row.get("MA_50"), 2),
                             "MA_200": safe_round(latest_row.get("MA_200"), 2),
@@ -103,6 +107,18 @@ def main():
             "last_updated": str(max([v["Last_Updated"] for v in latest_values.values()]))
         }
         
+        # Calculate summary logic
+        def get_val(m, k): return m.get(k) if m.get(k) is not None else -999
+        top_gainers = sorted(latest_values.items(), key=lambda x: get_val(x[1], "Return_1M"), reverse=True)[:3]
+        oversold = [name for name, v in latest_values.items() if v.get("RSI_14") is not None and v.get("RSI_14") < 30]
+        volatility_ranks = sorted(latest_values.items(), key=lambda x: (x[1].get("ATR_14") / x[1].get("Close")) if x[1].get("ATR_14") and x[1].get("Close") else 0, reverse=True)[:3]
+        
+        summary = {
+            "top_gainers": [name for name, _ in top_gainers],
+            "oversold": oversold,
+            "high_volatility": [name for name, _ in volatility_ranks]
+        }
+        
         assets_data = {}
         for name, metrics in latest_values.items():
             close = metrics.get("Close")
@@ -119,17 +135,15 @@ def main():
             if close is not None and ma200 is not None:
                 trend = "Bearish" if close < ma200 else "Bullish"
             
-            # Asset snapshot with absolute values
+            # Balanced snapshot with absolute values
             snapshot = {
+                "Open": metrics.get("Open"),
+                "High": metrics.get("High"),
+                "Low": metrics.get("Low"),
                 "Close": close,
-                "MA_20": ma20,
-                "MA_50": ma50,
-                "MA_200": ma200,
-                "RSI_14": metrics.get("RSI_14"),
-                "ATR_14": metrics.get("ATR_14")
+                "Volume": metrics.get("Volume")
             }
             
-            # Technical performance with relative/calculated indicators
             technical_performance = {
                 "dist_to_MA20": safe_dist(close, ma20),
                 "dist_to_MA50": safe_dist(close, ma50),
@@ -141,7 +155,6 @@ def main():
                 "Drawdown_52W": metrics.get("Drawdown_52W")
             }
             
-            # Asset-specific correlations
             asset_correlations = {}
             if all_closes and 'corr_matrix' in locals() and name in corr_matrix.index:
                 asset_correlations = corr_matrix.loc[name].where(pd.notnull(corr_matrix.loc[name]), None).to_dict()
@@ -154,6 +167,7 @@ def main():
             
         market_context = {
             "metadata": metadata,
+            "summary": summary,
             "assets": assets_data
         }
         
@@ -161,7 +175,7 @@ def main():
         with open(json_file_path, "w") as f:
             json.dump(market_context, f, indent=4)
             
-        print(f"\nSuccessfully generated restructured asset-centric market context JSON to {json_file_path}")
+        print(f"\nSuccessfully generated enhanced market context JSON to {json_file_path}")
 
 if __name__ == "__main__":
     main()
